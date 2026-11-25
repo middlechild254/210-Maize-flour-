@@ -368,4 +368,69 @@ function tab(n){tabv=n;$('#reel').style.display=n?'none':'block';$('#jg').style.
 $('#vt').onclick=e=>{const v=e.target.dataset.v;if(v!=null)tab(+v)};
 $('#pl').onclick=()=>{tab(1);play()};
 
+  // review slideshow
+const R=[['Wanjiku M.','Nairobi','Home customer','Sunday is ugali day and my children ask for it all week. Smooth, soft, and it never fails me.'],['Otieno K.','Kisumu','Retailer','My shelf sold out in four days. Customers came back asking for Two Ten by name.'],['Halima A.','Mombasa','Wholesaler','Early delivery, spotless bags and fair credit terms. We now order every single month.'],['Brian N.','Eldoret','Athlete and coach','Our whole running club eats it before race day. You can taste the care in it.'],['Grace W.','Nakuru','Subscriber','I never run out and I save every month. The surprise gift at one year made my week.']];
+$('#rs').innerHTML=R.map(r=>`<article class="sl"><div class="stars" aria-label="5 stars">★★★★★</div><blockquote>${r[3]}</blockquote><div class="who"><div class="av">${r[0].split(' ').map(w=>w[0]).join('')}</div><div><b>${r[0]}</b><small>${r[2]}, ${r[1]}</small></div></div></article>`).join('');
+$('#pg').innerHTML=R.map((_,i)=>`<i data-i="${i}"><b></b></i>`).join('');
+let ri=0,rt,sl=document.querySelectorAll('.sl'),pgs=document.querySelectorAll('#pg i');
+function show(n,first){const old=ri;ri=(n+R.length)%R.length;sl.forEach((x,i)=>{x.classList.toggle('on',i==ri);x.classList.toggle('out',i==old&&old!=ri)});pgs.forEach((x,i)=>{x.classList.remove('on');x.classList.toggle('d',i<ri);if(i==ri){void x.offsetWidth;x.classList.add('on')}});clearTimeout(rt);rt=setTimeout(()=>show(ri+1),6000)}
+show(0);
+$('#rx').onclick=()=>show(ri+1);$('#rp').onclick=()=>show(ri-1);$('#pg').onclick=e=>{const i=e.target.closest('i');if(i)show(+i.dataset.i)};
+const rs=$('#rs');rs.onmouseenter=()=>{clearTimeout(rt);rs.classList.add('ps')};rs.onmouseleave=()=>{rs.classList.remove('ps');show(ri)};
+let sx=0;rs.onpointerdown=e=>sx=e.clientX;rs.onpointerup=e=>{const d=e.clientX-sx;if(Math.abs(d)>50)show(ri+(d<0?1:-1))};
+const rio=new IntersectionObserver(es=>es.forEach(e=>{if(e.isIntersecting){tween($('#ra'),4.9,v=>v.toFixed(1));tween($('#rn'),2480,v=>Math.round(v).toLocaleString())}}),{threshold:.3});rio.observe($('#rev'));
+// contact
+$('#ct').style.backgroundImage='url("'+document.querySelector('#pkd img').src+'")';
+$('#c1').href='tel:'+CO.phone.replace(/\s/g,'');$('#c1t').textContent=CO.phone;$('#c3').href='mailto:'+CO.email;$('#c3t').textContent=CO.email;$('#c4t').textContent=CO.addr;
+let ty='Shopper';$('#ctp').innerHTML=['Shopper','Retailer','Distributor'].map((t,i)=>`<button class="chip" aria-pressed="${i==0}">${t}</button>`).join('');
+const wa=t=>'https://wa.me/'+CO.wa.replace(/\D/g,'')+'?text='+encodeURIComponent(t);
+$('#c2').href=wa('Hello Two Ten, I would like to order.');
+$('#ctp').onclick=e=>{if(e.target.classList.contains('chip')){ty=e.target.textContent;document.querySelectorAll('#ctp .chip').forEach(c=>c.setAttribute('aria-pressed',c==e.target))}};
+$('#jb').onclick=()=>{if(!$('#jn').value.trim()||!/^(07|01)\d{8}$/.test($('#jp').value.replace(/\s/g,''))){toast('Enter your name and a valid Safaricom number');return}confetti();window.open(wa('Hello Two Ten, I am '+$('#jn').value.trim()+' ('+ty+', '+$('#jp').value+'). '+($('#jmsg').value||'Please send me a quote.')+' Code WELCOME210'),'_blank')};
+// order wizard
+const SZ=[['1/4 kg','Taster pack',.25,[35,33,30]],['1 kg','Handy pack',1,[120,112,103]],['2 kg','Family pack, our bestseller',2,[230,213,196]],['5 kg','Big home pack',5,[560,520,475]],['10 kg','Bulk sack',10,[1100,1020,935]],['50 kg','Trade sack',50,[5300,4900,4500]],['1 bale','12 x 2 kg bags (24 kg)',24,[2650,2450,2250]]];
+const TY=[['Retail','Home shopper','Everyday prices, delivered to your door',1500],['Wholesaler','Shop or trader','Trade prices and credit options',5000],['Distributor','Regional supply','Our lowest prices and region options',15000]];
+const dg=$('#dg'),O={t:0,s:0,q:{},mode:'Delivery',slot:'Morning',pay:'M-Pesa',i:{}};
+function toast(t){const e=$('#toast');e.textContent=t;e.classList.add('on');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('on'),2600)}
+const sub=()=>Object.entries(O.q).reduce((a,[i,n])=>a+n*SZ[i][3][O.t],0),fee=()=>O.mode=='Delivery'&&sub()>0&&sub()<TY[O.t][3]?250:0,tot=()=>sub()+fee(),kg=()=>Object.entries(O.q).reduce((a,[i,n])=>a+n*SZ[i][2],0);
+function openOrder(n,t){O.s=0;O.q=n?{2:n}:{};if(t!=null)O.t=t;O.i.date=O.i.date||'';draw(true);if(!dg.open)dg.showModal()}
+function lines(){return Object.entries(O.q).filter(e=>e[1]).map(([i,n])=>n+' x '+SZ[i][0]+' = '+K(n*SZ[i][3][O.t]))}
+function chip(a,v,cur){return `<button class="chip" data-a="${a}" data-v="${v}" aria-pressed="${v==cur}">${v}</button>`}
+function draw(anim){const keep=dg.querySelector('.ob'),st=keep?keep.scrollTop:0,i=O.i,t=TY[O.t];let body='',foot=true;
+if(O.s==0)body=`<h4>Who is ordering?</h4><p class="sub2">Your customer type sets your prices.</p><div class="tg">${TY.map((x,j)=>`<button class="tcd ${j==O.t?'on':''}" data-a="t" data-v="${j}"><b>${x[0]}</b>${x[1]}<br>${x[2]}<em>2 kg from ${K(SZ[2][3][j])}</em></button>`).join('')}</div>`;
+if(O.s==1)body=`<h4>Choose your packs</h4><p class="sub2">${t[0]} prices. Free delivery above ${K(t[3])}.</p>${SZ.map((z,j)=>`<div class="pr ${O.q[j]?'on':''}" id="r${j}"><div><b>${z[0]}</b><small>${z[1]}</small></div><span class="pp">${K(z[3][O.t])}</span><div class="qs"><button data-a="m" data-v="${j}" aria-label="Remove one ${z[0]}">-</button><span id="q${j}">${O.q[j]||0}</span><button data-a="p" data-v="${j}" aria-label="Add one ${z[0]}">+</button></div></div>`).join('')}`;
+if(O.s==2)body=`<h4>Your details</h4><p class="sub2">So we can deliver and keep you updated.</p><div class="fg"><label><span>Full name</span><input type="text" data-k="name" id="f_name" value="${i.name||''}" autocomplete="name"></label><label><span>Phone (M-Pesa)</span><input type="tel" data-k="phone" id="f_phone" value="${i.phone||''}" placeholder="07XX XXX XXX" autocomplete="tel"></label><label><span>Email (optional)</span><input type="email" data-k="email" value="${i.email||''}"></label>${O.t?`<label><span>Business name</span><input type="text" data-k="biz" id="f_biz" value="${i.biz||''}"></label>`:''}</div>
+<div style="margin-top:14px"><b>How would you like to receive it?</b><div class="chips">${chip('md','Delivery',O.mode)}${chip('md','Pickup',O.mode)}</div></div>
+<div class="fg">${O.mode=='Delivery'?`<label><span>Delivery area and address</span><input type="text" data-k="area" id="f_area" value="${i.area||''}" placeholder="e.g. Kilimani, Nairobi"></label>`:''}<label><span>Preferred date</span><input type="date" data-k="date" id="f_date" value="${i.date||''}" min="${new Date().toISOString().slice(0,10)}"></label></div>
+<b>Time slot</b><div class="chips">${['Morning','Afternoon','Evening'].map(x=>chip('sl',x,O.slot)).join('')}</div><label><span style="font-size:.8rem;color:var(--mut)">Notes (optional)</span><input type="text" data-k="note" value="${i.note||''}" placeholder="Gate code, call before arrival..."></label>`;
+if(O.s==3){const pays=O.t?['M-Pesa','Pay on delivery','Trade credit (subject to approval)']:['M-Pesa','Pay on delivery'];if(!pays.includes(O.pay))O.pay='M-Pesa';
+body=`<div class="rv2"><h4>Review and confirm</h4><p class="sub2">${t[0]} order for ${i.name||''}${i.biz?', '+i.biz:''}</p>${lines().map(l=>`<div class="row2"><span>${l.split(' = ')[0]}</span><b>${l.split(' = ')[1]}</b></div>`).join('')}<div class="row2"><span>Subtotal (${kg()} kg)</span><b>${K(sub())}</b></div><div class="row2"><span>${O.mode}${O.mode=='Delivery'?' to '+(i.area||''):''}, ${i.date||''} ${O.slot.toLowerCase()}</span><b>${fee()?K(fee()):'Free'}</b></div><div style="margin-top:16px"><b>Payment</b><div class="chips">${pays.map(x=>chip('py',x,O.pay)).join('')}</div></div></div>`}
+if(O.s==4){foot=false;body=`<div class="ok"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="48"/><path d="M38 62l16 16 30-34"/></svg><h4 style="font-size:2rem;margin-top:12px">Order booked, ${(i.name||'').split(' ')[0]}!</h4><div class="ref">${O.ref}</div><p class="sub2" style="margin:0 auto 18px;max-width:42ch">${O.pay=='M-Pesa'?'Check your phone for the M-Pesa prompt (demo). ':''}We will confirm your ${O.mode.toLowerCase()} for ${i.date} (${O.slot.toLowerCase()}) shortly.</p><p><b class="proj">${K(tot())}</b></p><p><a class="btn" target="_blank" rel="noopener" href="${wa('Hello Two Ten, order '+O.ref+' ('+t[0]+'): '+lines().join('; ')+'. Total '+K(tot())+'. '+O.mode+' '+i.date+' '+O.slot+'. Name: '+i.name+', '+i.phone+'.'+(i.area?' Area: '+i.area:''))}">Send order on WhatsApp</a> <button class="btn s" data-a="nw">Start a new order</button></p></div>`}
+const steps=['You','Products','Details','Confirm'];
+dg.innerHTML=`<div class="oh"><div><h3>Place your order</h3><small>210 Two Ten Fortified Maize Meal</small></div><button class="btn s" data-a="x" aria-label="Close order">Close</button></div><div class="stp2">${steps.map((x,j)=>`<span class="${j<=O.s?'on':''}"><i>${j<O.s?'✓':j+1}</i>${x}</span>`).join('')}<u style="width:${Math.min(O.s,3)/3*100}%"></u></div><div class="ob ${anim?'swap':''}">${body}</div>${foot?`<div class="of"><div><small>Order total</small><b id="ot">${K(tot())}</b></div><div>${O.s?'<button class="btn s" data-a="b">Back</button> ':''}<button class="btn" data-a="n">${O.s==3?'Confirm booking':'Continue'}</button></div></div>`:''}`;
+const nb=dg.querySelector('.ob');if(!anim&&nb)nb.scrollTop=st;const ot=$('#ot');if(ot)ot.dataset.v=tot()}
+function bad(id,m){const e=$('#'+id);if(e){e.classList.add('bad');e.focus()}toast(m);return false}
+function ok(){const i=O.i;if(O.s==1&&!sub())return bad('r0','Add at least one pack');
+if(O.s==2){document.querySelectorAll('.bad').forEach(e=>e.classList.remove('bad'));if(!(i.name||'').trim())return bad('f_name','Enter your name');if(!/^(07|01)\d{8}$/.test((i.phone||'').replace(/\s/g,'')))return bad('f_phone','Enter a valid Safaricom number');if(O.t&&!(i.biz||'').trim())return bad('f_biz','Enter your business name');if(O.mode=='Delivery'&&!(i.area||'').trim())return bad('f_area','Enter your delivery area');if(!i.date)return bad('f_date','Choose a date')}return true}
+dg.addEventListener('input',e=>{const k=e.target.dataset.k;if(k)O.i[k]=e.target.value});
+dg.addEventListener('click',e=>{const b=e.target.closest('[data-a]');if(!b)return;const a=b.dataset.a,v=b.dataset.v;
+if(a=='x')dg.close();
+else if(a=='t'){O.t=+v;draw(false)}
+else if(a=='p'||a=='m'){O.q[v]=Math.max(0,(O.q[v]||0)+(a=='p'?1:-1));$('#q'+v).textContent=O.q[v];$('#r'+v).classList.toggle('on',O.q[v]>0);tween($('#ot'),tot(),n=>K(n))}
+else if(a=='md'){O.mode=v;draw(false)}else if(a=='sl'){O.slot=v;draw(false)}else if(a=='py'){O.pay=v;draw(false)}
+else if(a=='b'){O.s--;draw(true)}
+else if(a=='n'){if(!ok())return;if(O.s==3){O.ref='TT-'+Date.now().toString(36).toUpperCase().slice(-6);O.s=4;draw(true);confetti()}else{O.s++;draw(true)}}
+else if(a=='nw'){O.q={};O.s=0;draw(true)}});
+$('#ord').onclick=$('#ord2').onclick=()=>openOrder(0);
+// wholesale price cards
+$('#wimg').src=document.querySelector('#pkd img').src;
+const PF=[['Same-day home delivery in Nairobi','Pay easily with M-Pesa','Free recipe card on first order','Free delivery above KES 1,500'],['Trade prices on every pack','14-day trade credit (subject to approval)','Free shelf display kit','Free delivery above KES 5,000'],['Our lowest price per kg','Exclusive region options','Marketing fund and account manager','Free delivery above KES 15,000']];
+$('#pcs').innerHTML=TY.map((t,i)=>{const p2=SZ[2][3][i],off=Math.round((1-p2/SZ[2][3][0])*100);return `<div class="pc ${i==1?'hot':i==2?'top':''}">${i==1?'<span class="rib">Most popular</span>':i==2?'<span class="rib">Lowest price</span>':''}<h3>${t[0]}</h3><small>${t[1]}</small><div class="pv"><small>KES</small><span data-c="${p2}">0</span><small>per 2 kg</small></div><div class="sv2">${off?'Save '+off+'% vs retail':'Everyday price'}</div><div class="mini"><span>10 kg sack</span><b>${K(SZ[4][3][i])}</b><span>1 bale</span><b>${K(SZ[6][3][i])}</b></div><ul>${PF[i].map(x=>`<li>${x}</li>`).join('')}</ul><button class="btn" data-t="${i}">Order as ${t[0]}</button></div>`}).join('');
+$('#pcs').onclick=e=>{const b=e.target.closest('[data-t]');if(b)openOrder(0,+b.dataset.t)};
+// theme
+$('#tg').onclick=()=>{const r=document.documentElement,d=matchMedia('(prefers-color-scheme:light)').matches?'light':'dark',c=r.dataset.theme||d;r.dataset.theme=c=='dark'?'light':'dark'};
+</script>
+</body>
+</html>
+
   
